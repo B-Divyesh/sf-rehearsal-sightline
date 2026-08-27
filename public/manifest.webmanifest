@@ -1,0 +1,9 @@
+{
+  "name": "Rehearsal Sightline",
+  "short_name": "Sightline",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f9f8",
+  "theme_color": "#f7f9f8",
+  "icons": [{"src":"/mark.svg","sizes":"any","type":"image/svg+xml"}]
+}
