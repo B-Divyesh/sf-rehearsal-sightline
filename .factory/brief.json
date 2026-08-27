@@ -1,0 +1,9 @@
+{
+  "slug": "rehearsal-sightline",
+  "title": "Rehearsal Sightline",
+  "artifact_class": "static-web",
+  "user": "Orchestra and band players practicing from their own MusicXML scores who need to see what is coming before the playhead reaches it and choose manageable rehearsal slices.",
+  "smallest_useful_product": "Static web app that imports MusicXML locally, lets a player mark rehearsal ranges, renders a configurable look-ahead strip, and exports a printable cue sheet.",
+  "monetization": "one-time",
+  "constraints": "Keep imported scores in-browser by default; support only user-provided MusicXML in v1; do not distribute copyrighted notation."
+}
