@@ -1,6 +1,6 @@
 # Rehearsal Sightline — repair handoff
 
-## Status: PASS — ready for deployment verification
+## Status: PASS — deployed
 
 **Repair base:** `dabb7c41f8f86a67d135f9ada537b4f6810b3d4f` (independent verification report for candidate `9fda18cfd15fba3c488aeae9c9320c7987daee1a`)
 
@@ -39,7 +39,14 @@
 
 ## Deploy / post-deploy
 
-Deploy `dist/` with `/opt/fleet/lib/deploy-static.sh rehearsal-sightline dist`. After deployment, verify the live bytes, CSP/frame protection, URL-return path, and service-worker offline reload at `https://rehearsal-sightline.sociobot.in/`; append the exact live evidence here.
+`/opt/fleet/lib/deploy-static.sh rehearsal-sightline dist` deployed the static artifact to Azure Static Web Apps at `https://rehearsal-sightline.sociobot.in/` on 2026-08-27. Azure reported deployment `acd75742-5fd2-41ea-b0e6-4536eb613626` succeeded.
+
+- Live `index.html` SHA-256 is `b80b32b8b596af1ea694f887fea32d32f0f88b1f2a8c959513d7d79cf79adf79`, exactly matching `dist/index.html`.
+- Live `sw.js` SHA-256 is `dbfa93c851e10ef0c63f6251401ecee3efad2359cb486cc0f2dc5a67da5f528b`, exactly matching `dist/sw.js`.
+- The deployed JS, CSS, and mobile hero bytes exactly match the build. Hashed assets use `Cache-Control: public, max-age=31536000, immutable`; the worker is `no-cache`.
+- Live headers include the configured CSP, `frame-ancestors 'none'`, `X-Frame-Options: DENY`, HSTS, `nosniff`, strict-origin referrer policy, and the restrictive Permissions-Policy.
+- `/opt/fleet/lib/verify-url.sh https://rehearsal-sightline.sociobot.in/ /tmp/rehearsal-sightline-live` passed with zero console/page errors and the required title, language, h1, main, image-alt, and button-label checks.
+- Live Chromium confirmation: the free first load requested only `https://rehearsal-sightline.sociobot.in`; a real invalid `?license=qa-invalid-token` return made one documented Sociobot verification request, stripped the URL, and displayed “License no longer active”; the live worker controlled a page with cache `sightline-00f3d89e470fbe2a`, and an offline reload rendered the h1 without errors.
 
 ## Known gaps / next steps
 
