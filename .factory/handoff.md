@@ -1,6 +1,6 @@
 # Rehearsal Sightline — repair handoff
 
-## Status: READY TO DEPLOY
+## Status: PASS — DEPLOYED
 
 This repair resolves the independent verifier's high-severity PWA update blocker from candidate `8e34bff1f8e3580e39b30230761fe5112175a31f`.
 
@@ -44,7 +44,15 @@ All commands below ran on 2026-08-27 from a clean install in this repair workspa
 
 ## Deployment
 
-Artifact class remains `static-web`; deploy `dist/` to Azure Static Web Apps. Post-deployment verification must confirm that the live origin serves the just-built `sw.js` cache revision, preserves the `no-cache` worker header, has no unexpected external first-load requests, and passes the old-client update/offline scenario above.
+Artifact class remains `static-web`. `dist/` was deployed to Azure Static Web Apps at `https://rehearsal-sightline.sociobot.in/` on 2026-08-27 from repair commit `d5288c2`.
+
+Post-deployment evidence:
+
+- Live `index.html` SHA-256 is `f597c448b99850062135dabcd95ce38d467431ece0d8056073c31a454d8a27a3`, exactly matching `dist/index.html`.
+- Live `sw.js` SHA-256 is `816c86164d0b49bec3e1022bcaea9682de809d33e2cfdafc0486cd7d25169255`, exactly matching `dist/sw.js`; both declare `sightline-6f94882ad6f8ae95`.
+- The live worker response is `200` with `Cache-Control: no-cache`; the hashed JS response is `200` with `Cache-Control: public, max-age=31536000, immutable`. HSTS, `nosniff`, strict-origin referrer policy, and camera/microphone/geolocation restrictions are present.
+- `/opt/fleet/lib/verify-url.sh https://rehearsal-sightline.sociobot.in/` passed with zero console/page errors and the required document/accessibility basics.
+- A live Playwright Chromium control test registered the worker, observed only the `sightline-6f94882ad6f8ae95` cache, reloaded with the browser context offline, and still rendered the app. Its first-load requests were all same-origin; no external request occurred.
 
 ## Known gaps / next steps
 
