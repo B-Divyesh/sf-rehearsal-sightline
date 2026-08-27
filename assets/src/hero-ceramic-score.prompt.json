@@ -1,0 +1,8 @@
+{
+  "tool": "/opt/fleet/lib/gen-image.sh",
+  "deployment": "factory-image",
+  "date": "2026-08-27",
+  "size": "1536x1024",
+  "quality": "high",
+  "prompt": "Use case: stylized-concept. Asset type: responsive landing-page hero illustration. Scene/backdrop: quiet pale glacial studio with soft horizon and generous negative space. Subject: an abstract folded blank music-score ribbon gliding over two low hand-thrown porcelain forms, with a single slim cobalt ceramic marker and a second translucent porcelain plane slightly ahead, suggesting musical look-ahead. Style/medium: editorial still-life photography blended with refined tactile 3D, restrained and believable. Composition/framing: wide landscape, objects weighted to the right and center, calm negative space at upper left, no UI mockup. Lighting/mood: diffuse winter daylight, serene, precise, soft cool shadows. Color palette: frost white, celadon ice, graphite, cobalt blue. Materials/textures: matte glaze, subtle paper tooth, faint handmade irregularity. Constraints: abstract non-readable staff marks only, no people, no instruments, no text, no watermark, no logos. Avoid: generic gradients, neon, glassmorphism, floating app cards, legible sheet music, copyrighted notation, dramatic bloom, clutter."
+}
