@@ -149,8 +149,9 @@ function workspace(): string {
   if (!part) return emptyWorkspace();
   const measure = part.measures[session.current] || part.measures[0];
   if (!measure) return emptyWorkspace();
+  const currentIndex = session.current;
   const maxLookahead = unlocked ? 16 : 8;
-  const defaultEnd = Math.min(part.measures.length - 1, session.current + Math.max(1, Math.min(session.lookahead, 4)));
+  const defaultEnd = Math.min(part.measures.length - 1, session.current + Math.max(1, Math.min(session.lookahead, 4)) - 1);
   return `<section id="workspace" class="workspace" aria-labelledby="workspace-title">
     <div class="workspace-heading"><div><p class="eyebrow">Current score</p><h2 id="workspace-title">${escapeHtml(session.score.title)}</h2><p>${session.score.composer ? `${escapeHtml(session.score.composer)} · ` : ''}${part.measures.length} measures</p></div>
       <div class="workspace-actions"><label class="select-label">Part<select id="part-select">${session.score.parts.map(item => `<option value="${escapeHtml(item.id)}" ${item.id === part.id ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}</select></label><button class="button quiet" data-action="print" ${session.ranges.length ? '' : 'disabled'}>${icon('print')} Print cue sheet</button><button class="overflow-button" data-action="toggle-more" aria-expanded="false" aria-controls="more-menu">More<span aria-hidden="true">•••</span></button></div>
@@ -167,7 +168,7 @@ function workspace(): string {
     ${sightline(part)}
     <div class="planning-grid">
       <section class="range-builder" aria-labelledby="builder-title"><p class="eyebrow">Mark a slice</p><h3 id="builder-title">Make the next passage manageable.</h3><p>Start with the visible music, then tighten the edges.</p>
-        <form id="range-form"><div class="measure-pair"><label>Start measure<input id="range-start" name="start" type="number" min="1" max="${part.measures.length}" value="${session.current + 1}" required></label><span aria-hidden="true">→</span><label>End measure<input id="range-end" name="end" type="number" min="1" max="${part.measures.length}" value="${defaultEnd + 1}" required></label></div>
+        <form id="range-form"><div class="measure-pair"><label>Start measure<select id="range-start" name="start">${part.measures.map((item, index) => `<option value="${index}" ${index === currentIndex ? 'selected' : ''}>m. ${escapeHtml(item.number)}</option>`).join('')}</select></label><span aria-hidden="true">→</span><label>End measure<select id="range-end" name="end">${part.measures.map((item, index) => `<option value="${index}" ${index === defaultEnd ? 'selected' : ''}>m. ${escapeHtml(item.number)}</option>`).join('')}</select></label></div>
           <label>Slice name<input name="label" maxlength="60" value="Measures ${escapeHtml(formatMeasure(part, session.current))}–${escapeHtml(formatMeasure(part, defaultEnd))}" required></label>
           <label>First player note <textarea name="note" maxlength="500" rows="3" placeholder="What is likely to stop you?"></textarea></label>
           <label class="tempo-field ${unlocked ? '' : 'is-locked'}">Target tempo <span>${unlocked ? 'Studio' : `${icon('lock')} Studio`}</span><input name="tempo" type="number" min="20" max="300" placeholder="e.g. 88" ${unlocked ? '' : 'disabled'}></label>
@@ -184,7 +185,7 @@ function workspace(): string {
 function studioSection(): string {
   return `<section id="studio" class="studio-section" aria-labelledby="studio-title"><div class="studio-copy"><p class="eyebrow">One-time Studio unlock</p><h2 id="studio-title">A longer view for deeper rehearsals.</h2><p>The complete free workspace—including unlimited slices, notes, print, and backup export—is yours. Studio adds a 16-measure sightline and target tempo cues to every range.</p><ul><li>Look ahead up to 16 measures</li><li>Add target tempos to queue and cue sheet</li><li>One license, restored on your devices</li></ul></div>
     <div class="studio-purchase"><span class="price"><strong>US$12</strong><small>one-time · no subscription</small></span>${unlocked ? `<p class="license-active">✓ Studio unlock active</p>` : `<a class="button primary full" href="${checkoutUrl}">Buy Studio securely</a>`}
-      <details><summary>Have a license? Restore it</summary><form id="license-form"><label>License token<input name="license" type="text" autocomplete="off" spellcheck="false" required></label><button class="button secondary full" type="submit">Verify license</button></form></details><p class="fine-print">Checkout, receipts, and refunds are handled by Sociobot/Dodo, the merchant of record. <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p></div>
+      <details><summary>Have a license? Restore it</summary><form id="license-form"><label>License token<input name="license" type="text" autocomplete="off" spellcheck="false" required></label><button class="button secondary full" type="submit" aria-label="Verify Studio license">Verify license</button></form></details><p class="fine-print">Checkout, receipts, and refunds are handled by Sociobot/Dodo, the merchant of record. <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p></div>
   </section>`;
 }
 
@@ -222,10 +223,10 @@ function addRange(form: HTMLFormElement): void {
   const part = currentPart();
   if (!part) return;
   const data = new FormData(form);
-  const start = Number(data.get('start')) - 1;
-  const end = Number(data.get('end')) - 1;
+  const start = Number(data.get('start'));
+  const end = Number(data.get('end'));
   if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end < start || end >= part.measures.length) {
-    errorMessage = `Choose an end measure between ${start + 1} and ${part.measures.length}.`; render(); return;
+    errorMessage = `Choose an end measure at or after ${formatMeasure(part, Math.max(0, start))}.`; render(); return;
   }
   const tempo = unlocked ? Number(data.get('tempo')) : 0;
   const range: RehearsalRange = { id: crypto.randomUUID(), start, end, label: String(data.get('label') || `Measures ${start + 1}–${end + 1}`), note: String(data.get('note') || ''), status: 'planned', ...(tempo ? { targetTempo: tempo } : {}) };
@@ -252,7 +253,13 @@ async function importPlan(file: File): Promise<void> {
 
 function bindInputs(): void {
   document.querySelectorAll<HTMLInputElement>('#score-file, #score-file-secondary, #replace-score-file').forEach(input => input.addEventListener('change', () => { const file = input.files?.[0]; if (file) void importScore(file); }));
-  document.querySelector<HTMLSelectElement>('#part-select')?.addEventListener('change', event => { if (!session) return; session.partId = (event.target as HTMLSelectElement).value; session.current = 0; session.ranges = []; persist(); notice = 'Part changed; the rehearsal queue is ready for this part.'; render(); });
+  document.querySelector<HTMLSelectElement>('#part-select')?.addEventListener('change', event => {
+    if (!session) return;
+    const select = event.target as HTMLSelectElement;
+    const nextPart = session.score.parts.find(part => part.id === select.value);
+    if (session.ranges.length && !confirm(`Switch to ${nextPart?.name || 'this part'} and clear the ${session.ranges.length} marked ${session.ranges.length === 1 ? 'slice' : 'slices'} for ${currentPart()?.name || 'the current part'}?`)) { select.value = session.partId; return; }
+    session.partId = select.value; session.current = 0; session.ranges = []; persist(); notice = 'Part changed; the rehearsal queue is ready for this part.'; render();
+  });
   document.querySelector<HTMLInputElement>('#position-range')?.addEventListener('input', event => { if (!session) return; playing = false; session.current = Number((event.target as HTMLInputElement).value); persist(); render(); });
   document.querySelector<HTMLInputElement>('#lookahead-range')?.addEventListener('input', event => { if (!session) return; session.lookahead = Number((event.target as HTMLInputElement).value); persist(); render(); });
   document.querySelector<HTMLFormElement>('#range-form')?.addEventListener('submit', event => { event.preventDefault(); addRange(event.currentTarget as HTMLFormElement); });
@@ -300,7 +307,7 @@ document.addEventListener('keydown', event => {
   const part = currentPart(); if (!part) return;
   if (event.code === 'Space') { event.preventDefault(); playing = !playing; playStarted = performance.now(); render(); }
   if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); playing = false; const step = event.shiftKey ? 4 : 1; session.current = Math.max(0, Math.min(part.measures.length - 1, session.current + (event.key === 'ArrowRight' ? step : -step))); persist(); render(); }
-  if (event.key.toLowerCase() === 'l') { const end = Math.min(part.measures.length - 1, session.current + Math.min(4, session.lookahead)); session.ranges.push({ id: crypto.randomUUID(), start: session.current, end, label: `Measures ${formatMeasure(part, session.current)}–${formatMeasure(part, end)}`, note: '', status: 'planned' }); persist(); notice = 'Visible slice added. Press Tab to reach its note field.'; render(); }
+  if (event.key.toLowerCase() === 'l') { const end = Math.min(part.measures.length - 1, session.current + Math.max(1, Math.min(4, session.lookahead)) - 1); session.ranges.push({ id: crypto.randomUUID(), start: session.current, end, label: `Measures ${formatMeasure(part, session.current)}–${formatMeasure(part, end)}`, note: '', status: 'planned' }); persist(); notice = 'Visible slice added. Press Tab to reach its note field.'; render(); }
 });
 
 setInterval(() => {

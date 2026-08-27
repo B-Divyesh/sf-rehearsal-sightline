@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { parseMusicXml } from './musicxml';
+import { zipSync, strToU8 } from 'fflate';
+import { parseMusicXml, parseScoreFile } from './musicxml';
 
 const score = `<?xml version="1.0" encoding="UTF-8"?>
 <score-partwise version="4.0">
@@ -34,5 +35,13 @@ describe('parseMusicXml', () => {
     expect(() => parseMusicXml('<not-score/>')).toThrow(/not a MusicXML partwise score/);
     expect(() => parseMusicXml('<score-timewise/>')).toThrow(/Export a partwise MusicXML/);
     expect(() => parseMusicXml('<score-partwise>')).toThrow(/not valid XML/);
+  });
+
+  it('opens a compressed MXL archive without uploading it', async () => {
+    const bytes = zipSync({ 'META-INF/container.xml': strToU8('<container/>'), 'score.musicxml': strToU8(score) });
+    const file = { name: 'ice.mxl', size: bytes.byteLength, arrayBuffer: async () => bytes.buffer } as File;
+    const parsed = await parseScoreFile(file);
+    expect(parsed.title).toBe('Ice Etude');
+    expect(parsed.parts[0]?.measures).toHaveLength(2);
   });
 });
