@@ -276,7 +276,13 @@ app.addEventListener('change', event => {
   const card = target.closest<HTMLElement>('[data-range-id]');
   if (!session || !card) return;
   const range = session.ranges.find(item => item.id === card.dataset.rangeId); if (!range) return;
-  if (target.matches('[data-action="range-status"]')) range.status = (target as HTMLSelectElement).value as RehearsalRange['status'];
+  if (target.matches('[data-action="range-status"]')) {
+    range.status = (target as HTMLSelectElement).value as RehearsalRange['status'];
+    persist();
+    notice = `${range.label} marked ${range.status === 'needs-work' ? 'Needs work' : range.status === 'passed' ? 'Passed' : 'Planned'}.`;
+    render();
+    return;
+  }
   if (target.matches('[data-action="range-note"]')) range.note = (target as HTMLTextAreaElement).value;
   persist();
 });
@@ -324,17 +330,21 @@ setInterval(() => {
 window.addEventListener('online', () => { document.querySelectorAll<HTMLElement>('[data-online]').forEach(el => { el.textContent = 'Private · on device'; }); void reconcileLicense(); });
 window.addEventListener('offline', () => document.querySelectorAll<HTMLElement>('[data-online]').forEach(el => { el.textContent = 'Offline · ready'; }));
 
-async function reconcileLicense(): Promise<void> {
+async function reconcileLicense(showResult = false): Promise<void> {
   if (!hasLicenseToken()) return;
   const result = await verifyLicense();
   const changed = unlocked !== result.valid;
   unlocked = result.valid;
-  if (changed) { notice = result.message; if (session && !unlocked && session.lookahead > 8) { session.lookahead = 8; persist(); } render(); }
+  if (changed || showResult) {
+    notice = result.message;
+    if (session && !unlocked && session.lookahead > 8) { session.lookahead = 8; persist(); }
+    render();
+  }
 }
 
 const captured = captureLicenseFromUrl();
 if (captured) notice = 'License received. Verifying your Studio unlock…';
 render();
-void reconcileLicense();
+void reconcileLicense(captured);
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => undefined));

@@ -12,6 +12,7 @@
   --ochre: #8a5412;
   --clay: #a13d32;
   --line: #ccd7d3;
+  --focus: #69716f;
   --serif: Georgia, Cambria, "Times New Roman", serif;
   --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-family: var(--sans);
@@ -29,7 +30,8 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 a { color: inherit; }
 img { max-width: 100%; display: block; }
 button { border: 0; background: transparent; }
-:focus-visible { outline: 3px solid #e49a38; outline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.button.primary:focus-visible, .play-button:focus-visible { outline-color: var(--ice); }
 .skip-link { position: fixed; z-index: 100; top: 8px; left: 8px; padding: 10px 16px; background: var(--ink); color: white; transform: translateY(-150%); }
 .skip-link:focus { transform: translateY(0); }
 .icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }

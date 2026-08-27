@@ -4,6 +4,21 @@ import path from 'node:path';
 
 const scorePath = path.join(process.cwd(), 'tests/fixtures/rehearsal.musicxml');
 
+function relativeLuminance(rgb: string): number {
+  const channels = rgb.match(/\d+/g)?.slice(0, 3).map(Number);
+  if (!channels || channels.length !== 3) throw new Error(`Expected an RGB color, received ${rgb}`);
+  const linear = channels.map(channel => {
+    const value = channel / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return (0.2126 * linear[0]) + (0.7152 * linear[1]) + (0.0722 * linear[2]);
+}
+
+function contrastRatio(first: string, second: string): number {
+  const [a, b] = [relativeLuminance(first), relativeLuminance(second)].sort((left, right) => right - left);
+  return (a + 0.05) / (b + 0.05);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
@@ -55,4 +70,60 @@ test('supports the score keyboard path without trapping focus', async ({ page })
   await expect(page.locator('.range-card')).toHaveCount(1);
   await page.keyboard.press('Tab');
   await expect(page.locator(':focus')).toBeVisible();
+});
+
+test('updates rehearsal result feedback immediately and persists it', async ({ page }) => {
+  await page.locator('#score-file').setInputFiles(scorePath);
+  await page.getByRole('button', { name: /Add to rehearsal queue/ }).click();
+
+  await page.getByRole('combobox', { name: /Result for Measures 1–4/ }).selectOption('passed');
+  await expect(page.locator('.status-stamp')).toHaveText('Passed');
+  await expect(page.locator('.section-title > span')).toHaveText('1 passed');
+  await expect(page.locator('#live-region')).toContainText('marked Passed');
+
+  await page.reload();
+  await expect(page.locator('.status-stamp')).toHaveText('Passed');
+  await expect(page.locator('.section-title > span')).toHaveText('1 passed');
+});
+
+test('reports an invalid returned license after its verification completes', async ({ browser }) => {
+  const context = await browser.newContext({ serviceWorkers: 'block' });
+  const page = await context.newPage();
+  try {
+    await page.route(/https:\/\/api\.sociobot\.in\/api\/v1\/products\/rehearsal-sightline\/verify\?license=qa-invalid-token$/, route => route.fulfill({
+      contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': 'http://127.0.0.1:4173' },
+      body: JSON.stringify({ valid: false, reason: 'invalid' }),
+    }));
+
+    await page.goto('/?license=qa-invalid-token');
+    await expect(page.locator('#live-region')).toHaveText(/License no longer active/);
+    await expect(page).toHaveURL(/\/$/);
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('sb_license:rehearsal-sightline'))).toBe('qa-invalid-token');
+  } finally {
+    await context.close();
+  }
+});
+
+test('keeps keyboard focus indicators above 3:1 on light and cobalt controls', async ({ page }) => {
+  const footerLink = page.getByLabel('Legal').getByRole('link', { name: 'Privacy' });
+  await footerLink.focus();
+  const lightFocus = await footerLink.evaluate(element => ({
+    focused: element.matches(':focus-visible'),
+    outline: getComputedStyle(element).outlineColor,
+    surface: getComputedStyle(document.body).backgroundColor,
+  }));
+  expect(lightFocus.focused).toBe(true);
+  expect(contrastRatio(lightFocus.outline, lightFocus.surface)).toBeGreaterThanOrEqual(3);
+
+  await page.locator('#score-file').setInputFiles(scorePath);
+  const primaryButton = page.getByRole('button', { name: /Add to rehearsal queue/ });
+  await primaryButton.focus();
+  const primaryFocus = await primaryButton.evaluate(element => ({
+    focused: element.matches(':focus-visible'),
+    outline: getComputedStyle(element).outlineColor,
+    surface: getComputedStyle(element).backgroundColor,
+  }));
+  expect(primaryFocus.focused).toBe(true);
+  expect(contrastRatio(primaryFocus.outline, primaryFocus.surface)).toBeGreaterThanOrEqual(3);
 });
