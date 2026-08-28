@@ -1,6 +1,6 @@
 # Rehearsal Sightline — repair handoff
 
-## Status: ready for deployment verification
+## Status: deployed and verified
 
 **Repair base:** `2f00889de86919dfe82bedada80fd6de01903e11`
 
@@ -41,9 +41,14 @@ npm run preview
 
 At 390 × 844, import `tests/fixtures/rehearsal.musicxml`. The Part picker displays “Clarinet in B♭”; both range sliders and all rendered controls have 44 × 44 px or larger target rectangles. The service-worker suite exercises an old controlled release, a replacement release, stale-cache cleanup, and offline reload.
 
-## Deployment
+## Deployment and live verification (2026-08-28)
 
-Static Azure deployment and live identity/header verification are the final work-order steps. This handoff will be updated with the deployed URL and exact post-deploy evidence once they complete.
+Deployed the verified `dist/` artifact with `/opt/fleet/lib/deploy-static.sh rehearsal-sightline dist` to [rehearsal-sightline.sociobot.in](https://rehearsal-sightline.sociobot.in/). Azure Static Web Apps deployment `229050b8-3b77-453b-96fd-bae73f8fc78e` completed successfully.
+
+- `/opt/fleet/lib/verify-url.sh` returned HTTPS 200 in 870 ms with no console/page errors, title, `lang=en`, one h1, main, image alt text, and labelled buttons.
+- Every publicly served `dist/` artifact matched its live SHA-256: HTML, hashed JS/CSS, hero images, manifest, SVG, robots, sitemap, and service worker. `staticwebapp.config.json` is intentionally deployment configuration, not a public asset.
+- Live headers include the configured CSP (`default-src 'self'` with only the Sociobot license API in `connect-src`), HSTS, `nosniff`, strict-origin referrer policy, `DENY` framing, restrictive Permissions-Policy, 30-second HTML revalidation, immutable hashed assets, and `no-cache` service worker.
+- A live Chromium 390 × 844 import selected “Clarinet in B♭” in a 366 × 44 px picker, found zero undersized rendered controls, made requests only to `https://rehearsal-sightline.sociobot.in`, and recorded no errors. Service-worker control was present; after switching offline, reload rendered the h1 successfully from cache `sightline-66a40aca89c4313f`.
 
 ## Known gaps
 
