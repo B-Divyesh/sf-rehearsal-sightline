@@ -64,6 +64,10 @@ test('legal routes work directly and preserve a single main heading', async ({ p
 
 test('supports the score keyboard path without trapping focus', async ({ page }) => {
   await page.locator('#score-file').setInputFiles(scorePath);
+  // Score shortcuts intentionally do not run while a form field owns focus.
+  // Move to the reading surface, as a keyboard-only player would, before
+  // exercising the document-level commands.
+  await page.locator('body').focus();
   await page.locator('body').press('ArrowRight');
   await expect(page.locator('.position strong')).toHaveText('2');
   await page.locator('body').press('l');
