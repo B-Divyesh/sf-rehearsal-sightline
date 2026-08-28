@@ -131,3 +131,36 @@ test('keeps keyboard focus indicators above 3:1 on light and cobalt controls', a
   expect(primaryFocus.focused).toBe(true);
   expect(contrastRatio(primaryFocus.outline, primaryFocus.surface)).toBeGreaterThanOrEqual(3);
 });
+
+test('keeps the selected part legible and every visible control touch-sized at 390px', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#score-file').setInputFiles(scorePath);
+
+  const partPicker = page.locator('#part-select');
+  await expect(partPicker).toHaveValue('P1');
+  await expect(partPicker.locator('option:checked')).toHaveText('Clarinet in B♭');
+  const partPickerBox = await partPicker.boundingBox();
+  expect(partPickerBox?.width).toBeGreaterThanOrEqual(300);
+  expect(partPickerBox?.height).toBeGreaterThanOrEqual(44);
+
+  // A populated queue exposes its status picker, while the whole rendered page
+  // includes the Studio and footer links called out by the verifier.
+  await page.getByRole('button', { name: /Add to rehearsal queue/ }).click();
+  const undersized = await page.locator('a, button, input, select, textarea, summary').evaluateAll(elements => elements
+    .filter(element => {
+      const style = getComputedStyle(element);
+      const box = element.getBoundingClientRect();
+      return style.display !== 'none'
+        && style.visibility !== 'hidden'
+        && Number(style.opacity) > 0
+        && box.width > 0
+        && box.height > 0;
+    })
+    .map(element => {
+      const box = element.getBoundingClientRect();
+      return { control: `${element.tagName.toLowerCase()}#${element.id}.${element.className}`, width: box.width, height: box.height };
+    })
+    .filter(({ width, height }) => width < 44 || height < 44));
+
+  expect(undersized).toEqual([]);
+});
