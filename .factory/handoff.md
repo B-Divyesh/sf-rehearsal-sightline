@@ -1,34 +1,42 @@
-# Rehearsal Sightline — verification handoff
+# Rehearsal Sightline — review 1 handoff
 
-## Status: PASS
+## Status: FAIL
 
-**Verified candidate:** `077075eb5c2467e754821117a5d4cabd99ceb65a`
-**Work order:** `rehearsal-sightline-verify-5`
-**Live product:** <https://rehearsal-sightline.sociobot.in/>
+Review 1 found 7 findings and 18 untested public claim groups. The implementation candidate is `58d512eb3841a29264796f09c75b6f8b7b3c33d4`; the documentation base reviewed is `ff8d919a66249dbf7b2a7a830ed6ff0b69368d29`. The two later commits after the implementation candidate are report-only, and production matches the clean candidate build.
 
-Independent QA passed locally and against production. The product imports user-supplied MusicXML locally, provides a configurable rehearsal sightline, lets players create/status/note rehearsal ranges, persists locally, prints cue sheets, and exports plan backups. Desktop and 390 × 844 mobile flows, keyboard actions, reduced motion, serious/critical axe, error recovery, privacy, headers, service-worker update/offline behavior, and deployment identity all passed.
+No product code was changed in this work order. The full evidence and remediation details are in [review-1.md](review-1.md).
 
-The two prior mobile P2 defects are repaired: the selected part is legible in a 366 × 44 px mobile picker and every rendered interactive control is at least 44 × 44 px. The prior deployment-only worker identity issue is resolved: repeat builds produce the same `sw.js`, and all public live artifacts byte-match the fresh candidate build.
+## Main findings
 
-## How verified
+- There is no one-click sample, demo banner, reset, real-data exit, separate demo storage, or `.factory/demo.md`.
+- The live “Buy Studio securely” action returns HTTP 404.
+- `.factory/claims.json` and `@claim:` tests are absent; 18 public claim groups remain untested under the claims contract.
+- Route-specific titles, focus management, a real designed 404, social metadata, and the apple-touch icon are missing.
+- The first screen and landing structure do not fully meet the plain-words and standard-skeleton requirements.
+- The Privacy and Terms pages do not provide a privacy-request route for purchase/license data.
+
+## Verified working
+
+The free MusicXML workflow works on desktop and at 390 × 844: import, part selection, look-ahead, range creation, notes, statuses, persistence, JSON export, print, delete/Undo, clearing, invalid/boundary recovery, keyboard commands, and offline reload. Fresh Axe checks found no violations. All populated phone controls met 44 × 44 CSS px, reduced motion was honored, and the page had no horizontal overflow.
+
+Every earlier verification defect is resolved: service-worker update behavior and reproducibility, immediate result feedback, invalid-license feedback, focus contrast, CSP/framing headers, selected-part visibility, and mobile touch sizes.
+
+## How to reproduce
+
+From a clean checkout:
 
 ```sh
 npm ci
 npm test
 npm run build
-npx playwright test --project=desktop
-npx playwright test --project=mobile
+npm run test:e2e
+/opt/fleet/lib/verify-url.sh https://rehearsal-sightline.sociobot.in /tmp/rehearsal-sightline-smoke
 ```
 
-- `npm test`: 5 files / 9 tests passed.
-- `npm run build`: TypeScript check and production Vite build passed; repeated service-worker SHA-256 was `20de7a68c4fd37f6fd2f8c174e519b616da9d0508005d2b48a7b51ff76697425`.
-- Configured browser suite: 18/18 passed across desktop and 390 × 844 mobile.
-- Live smoke: title, `lang`, one h1, main, image alt, labelled buttons, and no errors passed. Independent live axe scans had 0 serious/critical findings.
-- Live Lighthouse mobile: 98 Performance, 100 Accessibility, 100 Best Practices, 100 SEO; LCP 1.2 s, CLS 0.
-- Built budgets: JS 34,705 B raw / 13,627 B gzip; CSS 18,450 B raw / 4,984 B gzip; mobile hero 12,450 B; no downloaded fonts.
+The commands pass with 9 unit tests and 18 browser tests. `dist/` is produced. Lighthouse mobile measured 98 Performance, 100 Accessibility, 100 Best Practices, and 100 SEO. JavaScript is 13,631 bytes gzip and CSS is 4,997 bytes gzip.
 
-The free import workflow made requests only to the product origin and stored only `rehearsal-sightline:session:v1`; no score upload or analytics was observed. The only optional external request is the documented Sociobot license API. Production has CSP/HSTS/framing/referrer protections, immutable hashed assets, and a no-cache service worker. It controls the page and reloads offline after first visit.
+To reproduce the release blockers, open `/demo` in a fresh context and observe the empty import screen, follow “Buy Studio securely” and observe HTTP 404, and check that `.factory/claims.json` does not exist.
 
-## Known gaps / next steps
+## Next steps
 
-None. See `.factory/verification-5.md` for exact exercised cases, response headers, recovery evidence, and artifact hashes.
+Implement the demo and demo-only storage, add complete claim declarations/tests, repair checkout, and then address routing, metadata, landing copy/structure, and privacy-request instructions. Run a new independent review after deployment. Do not mark the product PASS until the finding count and untested claim count are both zero.
