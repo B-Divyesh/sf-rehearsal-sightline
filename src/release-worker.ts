@@ -20,6 +20,8 @@ function toPublicPath(outputDirectory: string, file: string): string {
 function isPrecacheFile(outputDirectory: string, file: string): boolean {
   const filename = relative(outputDirectory, file).replaceAll('\\', '/');
   return filename === 'index.html'
+    || filename.endsWith('/index.html')
+    || filename === '404.html'
     || filename === 'mark.svg'
     || filename === 'manifest.webmanifest'
     || filename.startsWith('assets/');
@@ -74,11 +76,11 @@ self.addEventListener('fetch', event => {
   if (request.mode === 'navigate') {
     event.respondWith(fetch(request)
       .then(response => cacheResponse(request, response, event))
-      .catch(() => caches.match('/index.html')));
+      .catch(() => caches.open(CACHE).then(cache => cache.match('/index.html'))));
     return;
   }
 
-  event.respondWith(caches.match(request).then(cached => cached || fetch(request)
+  event.respondWith(caches.open(CACHE).then(cache => cache.match(request.url)).then(cached => cached || fetch(request)
     .then(response => cacheResponse(request, response, event))));
 });
 `;

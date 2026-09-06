@@ -1,0 +1,107 @@
+[
+  {
+    "id": "demo-sandbox",
+    "claim": "Try a populated sample without changing your own plan.",
+    "where": "Landing action, demo banner, README",
+    "test": "npm run test:e2e -- --grep @claim:demo-sandbox",
+    "sandbox": "Fresh /demo context with a separate real-plan key; add a sample slice, reset, leave demo, and assert the real key is unchanged."
+  },
+  {
+    "id": "musicxml-import",
+    "claim": "Import MusicXML, XML, or MXL files up to 25 MB.",
+    "where": "Import controls, README",
+    "test": "npm run test:e2e -- --grep @claim:musicxml-import",
+    "sandbox": "Fresh /demo context; import a compressed MXL, reject a 25 MiB plus one byte XML file, then recover with XML."
+  },
+  {
+    "id": "local-privacy",
+    "claim": "Keep scores in the browser during free use.",
+    "where": "Landing facts, Privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:local-privacy",
+    "sandbox": "Fresh /demo browser context records every request through a sample planning action and checks only same-origin requests and demo-only storage."
+  },
+  {
+    "id": "part-choice",
+    "claim": "Choose the score part for the rehearsal queue.",
+    "where": "Workspace, README",
+    "test": "npm run test:e2e -- --grep @claim:part-choice",
+    "sandbox": "Fresh /demo context changes from clarinet to cello and checks the displayed part, measure count, and reset queue."
+  },
+  {
+    "id": "lookahead",
+    "claim": "Set the free sightline to eight measures.",
+    "where": "Workspace, README",
+    "test": "npm run test:e2e -- --grep @claim:lookahead",
+    "sandbox": "Fresh /demo context moves to the opening and sets look-ahead to eight; eight rendered measure tiles are required."
+  },
+  {
+    "id": "keyboard-stepping",
+    "claim": "Step through measures with the keyboard.",
+    "where": "README",
+    "test": "npm run test:e2e -- --grep @claim:keyboard-stepping",
+    "sandbox": "Fresh /demo context sends ArrowRight and Shift+ArrowRight to the reading surface and checks the visible measure."
+  },
+  {
+    "id": "range-notes",
+    "claim": "Mark a range with a name, note, and result.",
+    "where": "Workspace, README",
+    "test": "npm run test:e2e -- --grep @claim:range-notes",
+    "sandbox": "Fresh /demo context adds a named range with a note, marks it Passed, and checks the saved card outcome."
+  },
+  {
+    "id": "print-cue-sheet",
+    "claim": "Print a populated cue sheet.",
+    "where": "Workspace, README",
+    "test": "npm run test:e2e -- --grep @claim:print-cue-sheet",
+    "sandbox": "Fresh /demo context applies print media and requires all four sample ranges on the cue sheet."
+  },
+  {
+    "id": "plan-backup",
+    "claim": "Export and import a portable plan backup.",
+    "where": "Workspace, README",
+    "test": "npm run test:e2e -- --grep @claim:plan-backup",
+    "sandbox": "Fresh /demo context downloads a plan, checks its portable format and ranges, then imports it back."
+  },
+  {
+    "id": "browser-restore",
+    "claim": "Keep a demo plan until it is reset.",
+    "where": "Demo documentation",
+    "test": "npm run test:e2e -- --grep @claim:browser-restore",
+    "sandbox": "Fresh /demo context adds a range, reloads, and checks the range and demo storage remain."
+  },
+  {
+    "id": "offline-reload",
+    "claim": "Work offline after the first visit.",
+    "where": "Landing facts, Privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:offline-reload",
+    "sandbox": "Dedicated fresh browser context loads /demo under service-worker control, goes offline, reloads, and checks the populated workspace."
+  },
+  {
+    "id": "free-core",
+    "claim": "Use planning, cue sheets, and backups without a Studio license.",
+    "where": "Studio section, Terms, README",
+    "test": "npm run test:e2e -- --grep @claim:free-core",
+    "sandbox": "Fresh /demo context without a license adds a range, enables the cue sheet, and exposes backup export."
+  },
+  {
+    "id": "studio-license",
+    "claim": "Restore a Studio license on another device.",
+    "where": "Studio section",
+    "test": "npm run test:e2e -- --grep @claim:studio-license",
+    "sandbox": "Fresh /demo context blocks service workers, uses a recorded valid billing response, restores a token, and checks the 16-measure and tempo outcomes."
+  },
+  {
+    "id": "license-cache",
+    "claim": "Check a Studio license at most once per day.",
+    "where": "Privacy page",
+    "test": "npm run test:e2e -- --grep @claim:license-cache",
+    "sandbox": "Fresh /demo context uses a recorded valid billing response, reloads within one day without another check, then ages the recorded verdict and requires one check."
+  },
+  {
+    "id": "studio-pending",
+    "claim": "Avoid a broken checkout while Studio registration is pending.",
+    "where": "Studio section, Terms, README",
+    "test": "npm run test:e2e -- --grep @claim:studio-pending",
+    "sandbox": "Fresh /demo context verifies there is no checkout link or billing request before an explicit license restore."
+  }
+]

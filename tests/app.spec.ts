@@ -52,14 +52,49 @@ test('has no serious accessibility violations on empty and populated states', as
   await expect(page.locator('.workspace')).toBeVisible();
   results = await new AxeBuilder({ page }).analyze();
   expect(results.violations.filter(item => ['serious', 'critical'].includes(item.impact || ''))).toEqual([]);
+
+  await page.goto('/demo');
+  await expect(page.locator('[data-demo-banner]')).toBeVisible();
+  results = await new AxeBuilder({ page }).analyze();
+  expect(results.violations.filter(item => ['serious', 'critical'].includes(item.impact || ''))).toEqual([]);
 });
 
 test('legal routes work directly and preserve a single main heading', async ({ page }) => {
   await page.goto('/privacy');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Privacy, without a backstage.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Keep your MusicXML private');
+  await expect(page).toHaveTitle('Privacy — Rehearsal Sightline');
   await expect(page.locator('main')).toHaveCount(1);
   await page.goto('/terms');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Bring your own score. Keep your rights.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Use your own MusicXML scores');
+  await expect(page).toHaveTitle('Terms — Rehearsal Sightline');
+});
+
+test('uses real routes with page metadata, focus, and history restoration', async ({ page }) => {
+  await page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link', { name: 'Privacy' }).click();
+  await expect(page).toHaveURL(/\/privacy$/);
+  await expect(page).toHaveTitle('Privacy — Rehearsal Sightline');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://rehearsal-sightline.sociobot.in/privacy');
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', 'Privacy — Rehearsal Sightline');
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/apple-touch-icon.png');
+  await expect(page.getByRole('heading', { level: 1 })).toBeFocused();
+  await expect(page.locator('#route-announcer')).toHaveText('Privacy');
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveTitle('Rehearsal Sightline — Plan MusicXML rehearsal slices');
+  await expect(page.getByRole('heading', { level: 1, name: 'Plan MusicXML rehearsal slices' })).toBeFocused();
+});
+
+test('provides a clear route for purchase-data requests and a designed 404 page', async ({ page }) => {
+  await page.goto('/privacy-request');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Request purchase data');
+  await expect(page).toHaveTitle('Request purchase data — Rehearsal Sightline');
+
+  const response = await page.goto('/404.html');
+  expect(response?.status()).toBe(200);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Page not found');
+  await expect(page.getByRole('link', { name: 'Return to the planner' })).toBeVisible();
 });
 
 test('supports the score keyboard path without trapping focus', async ({ page }) => {
@@ -74,6 +109,13 @@ test('supports the score keyboard path without trapping focus', async ({ page })
   await expect(page.locator('.range-card')).toHaveCount(1);
   await page.keyboard.press('Tab');
   await expect(page.locator(':focus')).toBeVisible();
+});
+
+test('reduces interface motion when requested', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/demo');
+  const duration = await page.locator('.range-card').first().evaluate(element => getComputedStyle(element).transitionDuration);
+  expect(Number.parseFloat(duration)).toBeLessThanOrEqual(0.001);
 });
 
 test('updates rehearsal result feedback immediately and persists it', async ({ page }) => {
@@ -110,7 +152,7 @@ test('reports an invalid returned license after its verification completes', asy
 });
 
 test('keeps keyboard focus indicators above 3:1 on light and cobalt controls', async ({ page }) => {
-  const footerLink = page.getByLabel('Legal').getByRole('link', { name: 'Privacy' });
+  const footerLink = page.getByLabel('Footer links').getByRole('link', { name: 'Privacy' });
   await footerLink.focus();
   const lightFocus = await footerLink.evaluate(element => ({
     focused: element.matches(':focus-visible'),
@@ -135,6 +177,7 @@ test('keeps keyboard focus indicators above 3:1 on light and cobalt controls', a
 test('keeps the selected part legible and every visible control touch-sized at 390px', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#score-file').setInputFiles(scorePath);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 
   const partPicker = page.locator('#part-select');
   await expect(partPicker).toHaveValue('P1');

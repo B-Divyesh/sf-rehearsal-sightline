@@ -1,0 +1,1 @@
+Plan MusicXML rehearsal slices with a look-ahead view.

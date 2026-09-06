@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { clearSession, loadSession, saveSession } from './storage';
+import { clearSession, DEMO_SESSION_KEY, loadSession, saveSession, SESSION_KEY } from './storage';
 import type { SavedSession } from './types';
 
 const session: SavedSession = {
@@ -21,5 +21,20 @@ describe('local session storage', () => {
   it('fails closed when stored data is unreadable', () => {
     localStorage.setItem('rehearsal-sightline:session:v1', '{bad');
     expect(loadSession()).toBeNull();
+  });
+
+  it('keeps demo and real plans in separate namespaces', () => {
+    const demo = { ...session, score: { ...session.score, title: 'Demo part' } };
+    saveSession(session);
+    saveSession(demo, true);
+
+    expect(loadSession()).toEqual(session);
+    expect(loadSession(true)).toEqual(demo);
+    expect(localStorage.getItem(SESSION_KEY)).not.toBeNull();
+    expect(localStorage.getItem(DEMO_SESSION_KEY)).not.toBeNull();
+
+    clearSession(true);
+    expect(loadSession(true)).toBeNull();
+    expect(loadSession()).toEqual(session);
   });
 });

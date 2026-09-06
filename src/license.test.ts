@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { cachedUnlock, captureLicenseFromUrl, storeLicense, verifyLicense } from './license';
+import { cachedUnlock, captureLicenseFromUrl, storeLicense, useDemoLicenseStorage, verifyLicense } from './license';
 
 describe('Studio license flow', () => {
   beforeEach(() => {
     localStorage.clear();
     history.replaceState({}, '', '/');
+    useDemoLicenseStorage(false);
     vi.restoreAllMocks();
   });
 
@@ -21,5 +22,14 @@ describe('Studio license flow', () => {
     await expect(verifyLicense(true)).resolves.toMatchObject({ valid: true });
     expect(cachedUnlock()).toBe(true);
     expect(fetch).toHaveBeenCalledWith(expect.stringContaining('license=restored-token'));
+  });
+
+  it('uses a separate token key in demo mode', () => {
+    storeLicense('real-license');
+    useDemoLicenseStorage(true);
+    storeLicense('demo-license');
+
+    expect(localStorage.getItem('sb_license:rehearsal-sightline')).toBe('real-license');
+    expect(localStorage.getItem('demo:sb_license:rehearsal-sightline')).toBe('demo-license');
   });
 });

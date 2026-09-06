@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest';
 describe('static deployment response policy', () => {
   it('blocks framing and limits executable content to this origin', async () => {
     const source = await readFile(resolve(process.cwd(), 'public/staticwebapp.config.json'), 'utf8');
-    const config = JSON.parse(source) as { globalHeaders: Record<string, string> };
+    const config = JSON.parse(source) as {
+      globalHeaders: Record<string, string>;
+      responseOverrides?: Record<string, { rewrite?: string; statusCode?: number }>;
+    };
     const csp = config.globalHeaders['Content-Security-Policy'];
 
     expect(config.globalHeaders['X-Frame-Options']).toBe('DENY');
@@ -13,5 +16,6 @@ describe('static deployment response policy', () => {
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain("script-src 'self'");
     expect(csp).toContain("connect-src 'self' https://api.sociobot.in");
+    expect(config.responseOverrides?.['404']).toMatchObject({ rewrite: '/404.html', statusCode: 404 });
   });
 });
