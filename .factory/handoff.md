@@ -6,7 +6,7 @@ Rehearsal Sightline helps orchestra and band players turn their own MusicXML sco
 
 - Deployed implementation: `cab4a8f0cc707d6579137f7863f497dec2cc2cfa`
 - Main repair implementation: `4cb6e88403a4402d9478e4ee369b2d07036b0254`
-- Documentation handoff commit: recorded by the following report-only commit.
+- Documentation handoff base: `06962817863908f5abae6967fdd038a97ffd4b5b` (this report-only correction records that SHA).
 - Live URL: https://rehearsal-sightline.sociobot.in
 - Build output: `dist/`
 
