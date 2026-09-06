@@ -1,42 +1,58 @@
-# Rehearsal Sightline — review 1 handoff
+# Rehearsal Sightline handoff
 
-## Status: FAIL
+## Status: ready for review
 
-Review 1 found 7 findings and 18 untested public claim groups. The implementation candidate is `58d512eb3841a29264796f09c75b6f8b7b3c33d4`; the documentation base reviewed is `ff8d919a66249dbf7b2a7a830ed6ff0b69368d29`. The two later commits after the implementation candidate are report-only, and production matches the clean candidate build.
+Rehearsal Sightline helps orchestra and band players turn their own MusicXML score into manageable rehearsal slices with a look-ahead view and printable cue sheet.
 
-No product code was changed in this work order. The full evidence and remediation details are in [review-1.md](review-1.md).
+- Deployed implementation: `cab4a8f0cc707d6579137f7863f497dec2cc2cfa`
+- Main repair implementation: `4cb6e88403a4402d9478e4ee369b2d07036b0254`
+- Documentation handoff commit: recorded by the following report-only commit.
+- Live URL: https://rehearsal-sightline.sociobot.in
+- Build output: `dist/`
 
-## Main findings
+## What changed
 
-- There is no one-click sample, demo banner, reset, real-data exit, separate demo storage, or `.factory/demo.md`.
-- The live “Buy Studio securely” action returns HTTP 404.
-- `.factory/claims.json` and `@claim:` tests are absent; 18 public claim groups remain untested under the claims contract.
-- Route-specific titles, focus management, a real designed 404, social metadata, and the apple-touch icon are missing.
-- The first screen and landing structure do not fully meet the plain-words and standard-skeleton requirements.
-- The Privacy and Terms pages do not provide a privacy-request route for purchase/license data.
+- Added the one-click `/demo` sandbox. It opens an original eight-measure `North Window Study` sample with four marked slices. Demo state uses only `demo:rehearsal-sightline:*` local-storage keys; real plans and licenses are neither read nor written. The persistent banner explains this, offers Reset demo, and Start for real discards the sandbox.
+- Added `.factory/claims.json` with 15 public claims and exactly one tagged, outcome-based browser test for each. Tests operate through the demo entry point, including the offline test in its own browser context.
+- Replaced the broken Studio checkout action with a clear registration-pending status. The $12 one-time Studio offer, paid features, license restoration, validation, and terms remain stated. No visitor is sent to the known 404 endpoint.
+- Added `/demo`, `/privacy`, `/terms`, and `/privacy-request` direct routes; route-specific initial and client-side metadata; screen-reader route announcements; focus restoration; a styled HTTP 404; sitemap, canonical/OG/Twitter tags, favicon/apple touch icon, and security headers.
+- Reworked the landing first screen and sections in plain language. It states the job, intended players, and `Try it with sample data` first action before scrolling.
+- Kept and retested the free workflow: MusicXML import, part choice, look-ahead, keyboard stepping, range notes and results, cue-sheet printing, plan backup, local restore, offline reload, invalid input/recovery, and undo.
 
-## Verified working
+## Billing dependency
 
-The free MusicXML workflow works on desktop and at 390 × 844: import, part selection, look-ahead, range creation, notes, statuses, persistence, JSON export, print, delete/Undo, clearing, invalid/boundary recovery, keyboard commands, and offline reload. Fresh Axe checks found no violations. All populated phone controls met 44 × 44 CSS px, reduced motion was honored, and the page had no horizontal overflow.
+Sociobot billing registration for `rehearsal-sightline` is still required before checkout can be enabled. The prior checkout endpoint returned HTTP 404, so it is not linked. This is an external registration dependency, not an invented or mocked payment flow. Public offer metadata is recorded at `/work/.evidence/billing-offer.json`; it names the actual $12 USD one-time Studio offer, live origin, paid features, and license verification path. The free core remains fully usable.
 
-Every earlier verification defect is resolved: service-worker update behavior and reproducibility, immediate result feedback, invalid-license feedback, focus contrast, CSP/framing headers, selected-part visibility, and mobile touch sizes.
+## Verification
 
-## How to reproduce
-
-From a clean checkout:
+From a clean dependency install:
 
 ```sh
 npm ci
 npm test
 npm run build
 npm run test:e2e
-/opt/fleet/lib/verify-url.sh https://rehearsal-sightline.sociobot.in /tmp/rehearsal-sightline-smoke
 ```
 
-The commands pass with 9 unit tests and 18 browser tests. `dist/` is produced. Lighthouse mobile measured 98 Performance, 100 Accessibility, 100 Best Practices, and 100 SEO. JavaScript is 13,631 bytes gzip and CSS is 4,997 bytes gzip.
+- `npm test`: 11 passed.
+- `npm run build`: passed; initial JS is 16.33 KB gzip and CSS is 5.48 KB gzip.
+- `npm run test:e2e`: 54 passed on desktop and 390 px mobile.
+- Every command listed in `.factory/claims.json` was run individually against this final candidate; each passed on desktop and mobile.
+- Playwright Axe checks found zero violations on the live landing page and live demo. The complete browser suite also checks empty, populated, mobile, keyboard, focus, reduced-motion, direct-route, privacy-request, designed-404, offline/update, invalid, boundary, and recovery paths.
+- `/opt/fleet/lib/verify-url.sh https://rehearsal-sightline.sociobot.in /work/.evidence/live-smoke-final-2` passed: HTTPS 200, no console errors, title/lang/main/alt checks pass, and zero unlabeled buttons.
+- Fresh live desktop and phone contexts confirmed the first-screen job/action, four populated sample ranges, persistent demo label, reset from three ranges back to four, demo-only storage, real-data exit, direct Privacy title, and HTTP 404 with a functional return link. Screenshots are in `/work/.evidence/`.
+- Lighthouse live mobile: Performance 100, Accessibility 100, LCP 1.1 s, CLS 0.
 
-To reproduce the release blockers, open `/demo` in a fresh context and observe the empty import screen, follow “Buy Studio securely” and observe HTTP 404, and check that `.factory/claims.json` does not exist.
+`npx @axe-core/cli` could not use the container's Playwright Chromium because its bundled global ChromeDriver only supports Chrome 152 while Playwright ships Chromium 145. The required equivalent Playwright Axe integration ran against the live landing and demo and reported zero violations.
 
-## Next steps
+## Product documents
 
-Implement the demo and demo-only storage, add complete claim declarations/tests, repair checkout, and then address routing, metadata, landing copy/structure, and privacy-request instructions. Run a new independent review after deployment. Do not mark the product PASS until the finding count and untested claim count are both zero.
+- Demo contract: `.factory/demo.md`
+- Claims and commands: `.factory/claims.json`
+- Landing-copy audit: `.factory/copy-audit.md`
+- Catalog description: `.factory/catalog-description.txt` and `/work/.evidence/catalog-description.txt`
+- Visual provenance: `.factory/design.md`
+
+## Remaining work
+
+No known product-code defect remains from review 1. The only named dependency is the external Sociobot billing registration needed to make the existing Studio checkout available. Once registration is complete, enable the hosted checkout link and independently verify payment, return-token storage, and entitlement verification. Do not expose checkout before that registration succeeds.
